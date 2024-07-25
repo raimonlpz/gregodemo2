@@ -10,6 +10,7 @@ canvas {
   position: absolute;
   inset: 0;
   z-index: 0;
+  pointer-events: none !important;
 }
 #reduced-motion-toggle {
   position: absolute;
