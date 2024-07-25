@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GregoDemo (II)</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <script id="vertexShader" type="x-shader/x-vertex">
+      varying vec2 vUv;
+      void main() {
+          vUv = uv;
+          vec3 pos = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.);
+      }
+    </script>
+    <script id="fragmentShader" type="x-shader/x-fragment">
+      varying vec2 vUv;
+      uniform sampler2D tDiffuse;
+      uniform vec2 uStrength;
+      uniform vec2 uScreenRes;
+      uniform float uReducedMotion;
+      float smoothcircle(vec2 st, float r){
+          float dist = distance(st, vec2(0.5));
+          return 1.0 - smoothstep(0., r, dist);
+      }
+      void main() {
+          vec2 uv = vUv;
+
+          // zoom distortion
+          float prox = smoothcircle(uv, 1.);
+          float zoomStrength = (uStrength.x+uStrength.y)*10.;
+          float maxZoomStrength = uReducedMotion > 0.5 ? 0.2 : 0.5;
+          zoomStrength = clamp(zoomStrength, 0., maxZoomStrength);
+          vec2 zoomedUv = mix(uv, vec2(0.5), prox*zoomStrength);
+          vec4 tex = texture2D(tDiffuse, zoomedUv);
+
+          // rgb shift
+          if (uReducedMotion < 0.5) {
+              float rgbShiftStrength = (uStrength.x+uStrength.y) * 0.3;
+              tex.r = texture2D(tDiffuse, zoomedUv + rgbShiftStrength).r;
+              tex.b = texture2D(tDiffuse, zoomedUv - rgbShiftStrength).b;
+          }
+
+          gl_FragColor = tex;
+      }
+    </script>
+    <label for="motion" id="reduced-motion-toggle">
+      <input id="motion" type="checkbox" />
+      Reduced motion
+    </label>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+    <script src="script.js" type="module"></script>
+  </body>
+</html>
